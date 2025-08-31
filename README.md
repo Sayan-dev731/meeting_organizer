@@ -1,4 +1,4 @@
-# Meeting Arrangement System
+# Meeting Organizing system
 
 A modern web application for scheduling meetings with Google's career page inspired design. Features user and admin panels with n8n workflow integration.
 
