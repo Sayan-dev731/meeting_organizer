@@ -2,7 +2,7 @@
 
 A modern web application for scheduling meetings with Google's career page inspired design. Features user and admin panels with n8n workflow integration.
 
-## Recent Fixes (December 2024)
+## Recent Fixes (August 2025)
 
 ### Admin Dashboard Issues Resolved ✅
 - **Fixed "currentMeetings is not iterable" error** - Enhanced array initialization and error handling
