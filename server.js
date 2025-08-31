@@ -7,10 +7,14 @@ const path = require('path');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const GoogleSheetsService = require('./services/googleSheetsService');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize Google Sheets service
+const googleSheetsService = new GoogleSheetsService();
 
 // Security middleware
 app.use(helmet({
@@ -225,140 +229,82 @@ app.post('/api/meeting/request', async (req, res) => {
     }
 });
 
-// Get meetings for admin panel
+// Get meetings for admin panel - Direct Google Sheets access
 app.get('/api/admin/meetings', authenticateAdmin, async (req, res) => {
     try {
-        const webhookUrl = process.env.ADMIN_MEETINGS_WEBHOOK;
-        if (!webhookUrl) {
-            console.log('⚠️ Admin meetings webhook URL not configured');
-            return res.json({
-                success: true,
+        console.log('📊 Fetching meetings directly from Google Sheets...');
+
+        // Check if Google Sheets ID is configured
+        if (!process.env.GOOGLE_SHEETS_ID) {
+            return res.status(400).json({
+                success: false,
                 meetings: [],
-                message: 'n8n webhook not configured'
+                error: 'Google Sheets ID not configured',
+                message: 'Please set GOOGLE_SHEETS_ID in your environment variables'
             });
         }
 
-        console.log('📡 Fetching meetings from n8n:', webhookUrl);
-        const response = await axios.get(webhookUrl, {
-            timeout: 10000,
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        });
+        // Fetch meetings directly from Google Sheets
+        const meetings = await googleSheetsService.fetchMeetingRequests();
 
-        console.log('📊 n8n Response Status:', response.status);
-        console.log('📊 n8n Response Data:', JSON.stringify(response.data, null, 2));
+        // Generate statistics
+        const statistics = googleSheetsService.generateStatistics(meetings);
 
-        let meetings = [];
-        let statistics = {};
-        let lastUpdated = null;
-        let message = '';
-
-        // Handle n8n "Respond to Webhook" node output structures
-        if (response.data) {
-            let actualData = response.data;
-
-            // Handle different "Respond to Webhook" response types:
-
-            // 1. "All Incoming Items" - n8n returns array directly or nested
-            if (Array.isArray(actualData)) {
-                meetings = actualData;
-                console.log('✅ Found direct array (All Incoming Items):', meetings.length);
-            }
-            // 2. "First Incoming Item" or "JSON" response - check nested structures
-            else if (actualData && typeof actualData === 'object') {
-
-                // Check for n8n workflow nested json property (common with Respond to Webhook)
-                if (actualData.json && typeof actualData.json === 'object') {
-                    actualData = actualData.json;
-                    console.log('📦 Found nested data under .json property');
-                }
-
-                // Try to extract meetings from various possible structures
-                if (Array.isArray(actualData)) {
-                    meetings = actualData;
-                    console.log('✅ Found meetings array in nested json:', meetings.length);
-                } else if (actualData.meetings && Array.isArray(actualData.meetings)) {
-                    meetings = actualData.meetings;
-                    statistics = actualData.statistics || {};
-                    lastUpdated = actualData.lastUpdated;
-                    message = actualData.message || '';
-                    console.log('✅ Found meetings in .meetings property:', meetings.length);
-                } else if (actualData.data && Array.isArray(actualData.data)) {
-                    meetings = actualData.data;
-                    console.log('✅ Found meetings in .data property:', meetings.length);
-                } else if (actualData.items && Array.isArray(actualData.items)) {
-                    // Handle case where n8n wraps data in "items" property
-                    meetings = actualData.items;
-                    console.log('✅ Found meetings in .items property:', meetings.length);
-                } else if (actualData.response && Array.isArray(actualData.response)) {
-                    // Handle case where data is in "response" property
-                    meetings = actualData.response;
-                    console.log('✅ Found meetings in .response property:', meetings.length);
-                } else if (actualData.result && Array.isArray(actualData.result)) {
-                    // Handle case where data is in "result" property
-                    meetings = actualData.result;
-                    console.log('✅ Found meetings in .result property:', meetings.length);
-                } else if (actualData.message === 'Workflow was started') {
-                    // n8n workflow started but didn't return data
-                    console.log('⚠️ n8n workflow started but no data returned');
-                    console.log('💡 SOLUTION: Add "Respond to Webhook" node to your n8n workflow');
-                    console.log('📋 Steps to fix:');
-                    console.log('   1. Open your n8n workflow');
-                    console.log('   2. Add a "Respond to Webhook" node at the end');
-                    console.log('   3. Set "Respond With" to "All Incoming Items" or "JSON"');
-                    console.log('   4. Connect it after your data processing nodes');
-                    console.log('   5. Make sure your Webhook trigger has "Respond" set to "Using Respond to Webhook Node"');
-                    meetings = [];
-                } else if (actualData.requestId || actualData.id) {
-                    // If it's a single meeting object, wrap it in an array
-                    meetings = [actualData];
-                    console.log('✅ Found single meeting object');
-                } else {
-                    // Log the structure for debugging
-                    console.log('🔍 Unknown data structure from n8n:');
-                    console.log('📋 Available properties:', Object.keys(actualData));
-                    console.log('💡 Ensure your "Respond to Webhook" node returns meeting data');
-
-                    // Try to find any array property that might contain meetings
-                    for (const [key, value] of Object.entries(actualData)) {
-                        if (Array.isArray(value) && value.length > 0) {
-                            console.log(`🔍 Found array in property "${key}" with ${value.length} items`);
-                            // Check if it looks like meeting data
-                            const firstItem = value[0];
-                            if (firstItem && (firstItem.requestId || firstItem.userName || firstItem.meetingPurpose)) {
-                                meetings = value;
-                                console.log(`✅ Using array from "${key}" property as meetings`);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        console.log('📈 Final meetings count:', meetings.length);
+        console.log(`✅ Successfully fetched ${meetings.length} meetings from Google Sheets`);
+        console.log('� Statistics:', JSON.stringify(statistics, null, 2));
 
         res.json({
             success: true,
             meetings: meetings,
             statistics: statistics,
-            lastUpdated: lastUpdated,
-            message: message || `Successfully loaded ${meetings.length} meetings`,
-            count: meetings.length
+            lastUpdated: new Date().toISOString(),
+            message: `Successfully loaded ${meetings.length} meetings from Google Sheets`,
+            count: meetings.length,
+            source: 'google_sheets_direct'
         });
 
     } catch (error) {
-        console.error('❌ Get meetings error:', error.message);
-        console.error('🔗 Webhook URL:', process.env.ADMIN_MEETINGS_WEBHOOK);
+        console.error('❌ Error fetching meetings from Google Sheets:', error.message);
 
-        // Return empty array instead of error to prevent frontend crashes
+        // Provide helpful error responses
+        let errorMessage = 'Failed to fetch meetings from Google Sheets';
+        let troubleshooting = {};
+
+        if (error.message.includes('API key')) {
+            errorMessage = 'Google Sheets API authentication failed';
+            troubleshooting = {
+                solution: 'Add GOOGLE_API_KEY to your .env file',
+                alternative: 'Make sure the Google Sheet is publicly accessible',
+                docs: 'https://developers.google.com/sheets/api/guides/authorizing'
+            };
+        } else if (error.message.includes('permission')) {
+            errorMessage = 'Permission denied accessing Google Sheets';
+            troubleshooting = {
+                solution: 'Share your Google Sheet publicly with view access',
+                steps: [
+                    '1. Open your Google Sheet',
+                    '2. Click "Share" button',
+                    '3. Change to "Anyone with the link can view"',
+                    '4. Copy the sheet ID from the URL'
+                ]
+            };
+        } else if (error.message.includes('not found')) {
+            errorMessage = 'Google Sheet not found';
+            troubleshooting = {
+                solution: 'Check your GOOGLE_SHEETS_ID in .env file',
+                currentId: process.env.GOOGLE_SHEETS_ID,
+                format: 'Should be the long string from your sheet URL'
+            };
+        }
+
+        // Return error but don't crash the frontend
         res.json({
             success: false,
             meetings: [],
-            error: 'Failed to fetch meetings from n8n',
-            details: error.message
+            error: errorMessage,
+            details: error.message,
+            troubleshooting: troubleshooting,
+            timestamp: new Date().toISOString()
         });
     }
 });
@@ -439,11 +385,101 @@ app.get('/api/health', (req, res) => {
     res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        version: '1.0.0'
+        version: '1.0.0',
+        googleSheetsIntegration: {
+            enabled: true,
+            sheetId: process.env.GOOGLE_SHEETS_ID ? 'configured' : 'missing',
+            apiKey: process.env.GOOGLE_API_KEY ? 'configured' : 'missing'
+        }
     });
 });
 
-// Temporary testing endpoint with your actual meeting data
+// Simple test Google Sheets connection (no auth required for debugging)
+app.get('/api/test-sheets-connection', async (req, res) => {
+    try {
+        console.log('🧪 Testing Google Sheets connection (public endpoint)...');
+
+        if (!process.env.GOOGLE_SHEETS_ID) {
+            return res.status(400).json({
+                success: false,
+                error: 'Google Sheets ID not configured',
+                message: 'GOOGLE_SHEETS_ID missing from environment variables'
+            });
+        }
+
+        const meetings = await googleSheetsService.fetchMeetingRequests();
+
+        res.json({
+            success: true,
+            message: 'Google Sheets connection successful',
+            meetingsFound: meetings.length,
+            testResult: {
+                sheetsConfigured: !!process.env.GOOGLE_SHEETS_ID,
+                apiKeyConfigured: !!process.env.GOOGLE_API_KEY,
+                meetingsFound: meetings.length,
+                timestamp: new Date().toISOString(),
+                sheetId: process.env.GOOGLE_SHEETS_ID,
+                firstMeeting: meetings.length > 0 ? {
+                    requestId: meetings[0].requestId,
+                    userName: meetings[0].userName,
+                    status: meetings[0].status
+                } : null
+            }
+        });
+    } catch (error) {
+        console.error('❌ Google Sheets test failed:', error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Google Sheets connection failed',
+            details: error.message,
+            testResult: {
+                sheetsConfigured: !!process.env.GOOGLE_SHEETS_ID,
+                apiKeyConfigured: !!process.env.GOOGLE_API_KEY,
+                meetingsFound: 0,
+                timestamp: new Date().toISOString(),
+                errorType: error.message.includes('403') ? 'permission_denied' :
+                    error.message.includes('404') ? 'sheet_not_found' :
+                        error.message.includes('API') ? 'api_error' : 'unknown'
+            }
+        });
+    }
+});
+
+// Test Google Sheets connection (admin required)
+app.get('/api/admin/test-sheets', authenticateAdmin, async (req, res) => {
+    try {
+        console.log('🧪 Testing Google Sheets connection...');
+
+        const meetings = await googleSheetsService.fetchMeetingRequests();
+        const statistics = googleSheetsService.generateStatistics(meetings);
+
+        res.json({
+            success: true,
+            message: 'Google Sheets connection successful',
+            meetings: meetings,
+            statistics: statistics,
+            testResult: {
+                sheetsConfigured: !!process.env.GOOGLE_SHEETS_ID,
+                apiKeyConfigured: !!process.env.GOOGLE_API_KEY,
+                meetingsFound: meetings.length,
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('❌ Google Sheets test failed:', error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Google Sheets connection failed',
+            details: error.message,
+            testResult: {
+                sheetsConfigured: !!process.env.GOOGLE_SHEETS_ID,
+                apiKeyConfigured: !!process.env.GOOGLE_API_KEY,
+                meetingsFound: 0,
+                timestamp: new Date().toISOString()
+            }
+        });
+    }
+});// Temporary testing endpoint with your actual meeting data
 app.get('/api/admin/meetings/test', authenticateAdmin, (req, res) => {
     console.log('🧪 Using test meeting data');
     const testMeetings = [
@@ -458,149 +494,59 @@ app.get('/api/admin/meetings/test', authenticateAdmin, (req, res) => {
     });
 });
 
-// Trigger n8n sync workflow
+// Refresh meeting data from Google Sheets
 app.post('/api/admin/sync-n8n', authenticateAdmin, async (req, res) => {
     try {
-        console.log('🔄 Admin triggered n8n sync workflow');
+        console.log('🔄 Admin triggered Google Sheets data refresh');
 
-        // For sync, we directly trigger the existing "Admin Get Meetings Webhook" 
-        // which fetches fresh data from Google Sheets
-        const webhookUrl = process.env.ADMIN_MEETINGS_WEBHOOK;
-
-        if (!webhookUrl) {
+        // Check if Google Sheets ID is configured
+        if (!process.env.GOOGLE_SHEETS_ID) {
             return res.status(400).json({
-                error: 'No n8n webhook configured for sync operation',
-                message: 'Please configure ADMIN_MEETINGS_WEBHOOK in your environment variables'
+                error: 'Google Sheets not configured',
+                message: 'Please configure GOOGLE_SHEETS_ID in your environment variables'
             });
         }
 
-        console.log('📡 Triggering n8n "Admin Get Meetings Webhook" for sync:', webhookUrl);
+        console.log('📡 Fetching fresh data from Google Sheets...');
 
-        // Trigger the Admin Get Meetings Webhook with GET request
-        // This will fetch fresh data from Google Sheets and return formatted meeting data
-        const syncResponse = await axios.get(webhookUrl, {
-            timeout: 15000,
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            params: {
-                // Add query parameters to indicate this is a sync request
-                sync: 'true',
-                triggeredBy: 'admin',
-                timestamp: new Date().toISOString()
-            }
-        });
+        // Fetch fresh data directly from Google Sheets
+        const meetings = await googleSheetsService.fetchMeetingRequests();
+        const statistics = googleSheetsService.generateStatistics(meetings);
 
-        console.log('✅ n8n sync completed successfully, status:', syncResponse.status);
-        console.log('📊 n8n sync response:', JSON.stringify(syncResponse.data, null, 2));
-
-        let meetings = [];
-        let statistics = {};
-        let responseData = syncResponse.data;
-
-        // Handle different "Respond to Webhook" response structures from n8n sync
-        if (responseData) {
-            let actualData = responseData;
-
-            // Handle "Respond to Webhook" node output structures:
-
-            // 1. "All Incoming Items" - n8n returns array directly
-            if (Array.isArray(actualData)) {
-                meetings = actualData;
-                console.log('✅ Sync: Found direct array (All Incoming Items):', meetings.length);
-            }
-            // 2. Check for nested structures from "Respond to Webhook" node
-            else if (actualData && typeof actualData === 'object') {
-
-                // Check for n8n workflow nested json property
-                if (actualData.json && typeof actualData.json === 'object') {
-                    actualData = actualData.json;
-                    console.log('📦 Sync: Found nested data under .json property');
-                }
-
-                // Try various response structures
-                if (Array.isArray(actualData)) {
-                    meetings = actualData;
-                    console.log('✅ Sync: Found meetings array in nested json:', meetings.length);
-                } else if (actualData.meetings && Array.isArray(actualData.meetings)) {
-                    meetings = actualData.meetings;
-                    statistics = actualData.statistics || {};
-                    console.log('✅ Sync: Found meetings in .meetings property:', meetings.length);
-                } else if (actualData.data && Array.isArray(actualData.data)) {
-                    meetings = actualData.data;
-                    console.log('✅ Sync: Found meetings in .data property:', meetings.length);
-                } else if (actualData.items && Array.isArray(actualData.items)) {
-                    meetings = actualData.items;
-                    console.log('✅ Sync: Found meetings in .items property:', meetings.length);
-                } else if (actualData.response && Array.isArray(actualData.response)) {
-                    meetings = actualData.response;
-                    console.log('✅ Sync: Found meetings in .response property:', meetings.length);
-                } else if (actualData.result && Array.isArray(actualData.result)) {
-                    meetings = actualData.result;
-                    console.log('✅ Sync: Found meetings in .result property:', meetings.length);
-                } else if (actualData.success && actualData.meetings) {
-                    // Handle structured response from workflow
-                    meetings = Array.isArray(actualData.meetings) ? actualData.meetings : [];
-                    console.log('✅ Sync: Found structured response with meetings:', meetings.length);
-                } else if (actualData.requestId || actualData.id) {
-                    // Single meeting object
-                    meetings = [actualData];
-                    console.log('✅ Sync: Found single meeting object');
-                } else {
-                    // Debug unknown structure
-                    console.log('🔍 Sync: Unknown data structure from n8n:');
-                    console.log('📋 Available properties:', Object.keys(actualData));
-
-                    // Auto-detect array properties that might contain meetings
-                    for (const [key, value] of Object.entries(actualData)) {
-                        if (Array.isArray(value) && value.length > 0) {
-                            console.log(`🔍 Sync: Found array in property "${key}" with ${value.length} items`);
-                            const firstItem = value[0];
-                            if (firstItem && (firstItem.requestId || firstItem.userName || firstItem.meetingPurpose)) {
-                                meetings = value;
-                                console.log(`✅ Sync: Using array from "${key}" property as meetings`);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        console.log('📈 Final sync result - meetings count:', meetings.length);
+        console.log('✅ Google Sheets refresh completed successfully');
+        console.log('� Retrieved meetings:', meetings.length);
 
         // Return success response with updated data
         res.json({
             success: true,
-            message: `n8n sync completed successfully - ${meetings.length} meetings retrieved`,
+            message: `Google Sheets refresh completed successfully - ${meetings.length} meetings retrieved`,
             meetings: meetings,
+            statistics: statistics,
             syncTriggered: true,
-            syncedAt: new Date().toISOString(),
-            statistics: statistics || responseData?.statistics || null,
+            refreshedAt: new Date().toISOString(),
             metadata: {
                 triggeredBy: 'admin',
-                webhookUrl: webhookUrl,
-                responseType: Array.isArray(responseData) ? 'array' : typeof responseData
+                source: 'google_sheets_direct',
+                sheetId: process.env.GOOGLE_SHEETS_ID
             }
         });
 
     } catch (error) {
-        console.error('❌ n8n sync error:', error.message);
+        console.error('❌ Google Sheets refresh error:', error.message);
 
         // Provide more helpful error messages
-        let errorMessage = 'Failed to sync with n8n';
+        let errorMessage = 'Failed to refresh data from Google Sheets';
         let errorDetails = error.message;
 
-        if (error.code === 'ECONNREFUSED') {
-            errorMessage = 'Cannot connect to n8n';
-            errorDetails = 'Make sure n8n is running on localhost:5678';
-        } else if (error.response?.status === 404) {
-            errorMessage = 'n8n webhook not found';
-            errorDetails = 'Check that the "Admin Get Meetings Webhook" is properly configured in your n8n workflow';
-        } else if (error.response?.status === 500) {
-            errorMessage = 'n8n workflow error';
-            errorDetails = 'Check n8n execution logs for workflow errors';
+        if (error.message.includes('API key')) {
+            errorMessage = 'Google Sheets API authentication failed';
+            errorDetails = 'Add GOOGLE_API_KEY to your .env file or configure OAuth properly';
+        } else if (error.message.includes('permission')) {
+            errorMessage = 'Permission denied accessing Google Sheets';
+            errorDetails = 'Make sure the Google Sheet is shared publicly or OAuth is configured';
+        } else if (error.message.includes('not found')) {
+            errorMessage = 'Google Sheet not found';
+            errorDetails = 'Check that GOOGLE_SHEETS_ID in .env is correct';
         }
 
         res.status(500).json({
@@ -609,9 +555,9 @@ app.post('/api/admin/sync-n8n', authenticateAdmin, async (req, res) => {
             syncTriggered: false,
             timestamp: new Date().toISOString(),
             troubleshooting: {
-                checkN8nRunning: 'Ensure n8n is running on localhost:5678',
-                checkWorkflow: 'Verify "Admin Get Meetings Webhook" node is active in n8n workflow',
-                checkWebhookUrl: 'Confirm ADMIN_MEETINGS_WEBHOOK environment variable is correct'
+                checkSheetId: 'Verify GOOGLE_SHEETS_ID environment variable is correct',
+                checkPermissions: 'Ensure Google Sheet is publicly accessible',
+                checkApiKey: 'Add GOOGLE_API_KEY to environment variables if needed'
             }
         });
     }

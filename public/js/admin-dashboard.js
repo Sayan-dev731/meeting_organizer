@@ -3,7 +3,7 @@
 let currentMeetings = [];
 let filteredMeetings = [];
 let currentMeetingDetails = null;
-let dashboardStatistics = null; // Store statistics from n8n workflow
+let dashboardStatistics = null; // Store statistics from Google Sheets
 
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🚀 DOM Content Loaded, waiting for session...');
@@ -115,7 +115,7 @@ async function loadMeetings() {
 
         // If no meetings returned, try the test endpoint to provide data
         if (response.ok && (!result?.meetings || result.meetings.length === 0)) {
-            console.log('📊 No meetings from n8n, trying test endpoint...');
+            console.log('📊 No meetings from Google Sheets, trying test endpoint...');
             try {
                 const testResponse = await fetch('/api/admin/meetings/test', {
                     method: 'GET',
@@ -127,7 +127,7 @@ async function loadMeetings() {
                     if (Array.isArray(testResult?.meetings) && testResult.meetings.length > 0) {
                         result = testResult;
                         console.log('🧪 Using test data:', testResult.meetings.length, 'meetings');
-                        showAlert('Using test data - check your n8n workflow configuration', 'warning');
+                        showAlert('Using test data - check your Google Sheets configuration', 'warning');
                     }
                 }
             } catch (testError) {
@@ -185,7 +185,7 @@ async function loadMeetings() {
             currentMeetings = getSampleMeetings();
             filteredMeetings = [...currentMeetings];
             renderMeetingsTable();
-            showAlert('Demo mode: Using sample data. Check n8n connection.', 'warning');
+            showAlert('Demo mode: Using sample data. Check Google Sheets connection.', 'warning');
         } else {
             // For other errors, show empty state
             renderMeetingsTable();
@@ -264,14 +264,14 @@ function updateDashboardStats() {
 
     let total, pending, approved, thisWeek;
 
-    // Use statistics from n8n workflow if available
+    // Use statistics from Google Sheets if available
     if (dashboardStatistics && typeof dashboardStatistics === 'object') {
-        console.log('📊 Using statistics from n8n workflow:', dashboardStatistics);
+        console.log('📊 Using statistics from Google Sheets:', dashboardStatistics);
         total = dashboardStatistics.totalCount || 0;
         pending = dashboardStatistics.pendingCount || 0;
         approved = dashboardStatistics.approvedCount || 0;
 
-        // For weekly requests, still calculate from current data as it's not in n8n stats
+        // For weekly requests, still calculate from current data as it's not in Google Sheets stats
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
         thisWeek = currentMeetings.filter(m => {
@@ -640,7 +640,7 @@ async function refreshMeetings() {
 }
 
 async function syncWithN8n() {
-    console.log('🔄 Starting n8n sync...');
+    console.log('🔄 Starting Google Sheets refresh...');
 
     // Get the sync button to show loading state
     const syncButton = document.querySelector('.sync-btn');
@@ -648,12 +648,12 @@ async function syncWithN8n() {
 
     try {
         // Show loading state
-        syncButton.innerHTML = '<span>⏳</span><span>Syncing...</span>';
+        syncButton.innerHTML = '<span>⏳</span><span>Refreshing...</span>';
         syncButton.disabled = true;
 
-        showAlert('Triggering n8n workflow sync...', 'info');
+        showAlert('Refreshing data from Google Sheets...', 'info');
 
-        console.log('📡 Calling n8n sync API...');
+        console.log('📡 Calling Google Sheets refresh API...');
         const response = await fetch('/api/admin/sync-n8n', {
             method: 'POST',
             credentials: 'include',
@@ -664,21 +664,21 @@ async function syncWithN8n() {
         });
 
         const result = await response.json();
-        console.log('📊 n8n sync response:', result);
+        console.log('📊 Google Sheets refresh response:', result);
 
         if (response.ok && result.success) {
-            console.log('✅ n8n sync successful');
+            console.log('✅ Google Sheets refresh successful');
 
             // If we got meetings data back, update immediately
             if (result.meetings && Array.isArray(result.meetings)) {
-                console.log('📈 Updating meetings data from sync response');
+                console.log('📈 Updating meetings data from refresh response');
                 currentMeetings = result.meetings;
                 filteredMeetings = [...currentMeetings];
 
                 // Store statistics if provided
                 if (result.statistics) {
                     dashboardStatistics = result.statistics;
-                    console.log('📊 Statistics from sync:', result.statistics);
+                    console.log('📊 Statistics from refresh:', result.statistics);
                 }
 
                 renderMeetingsTable();
@@ -690,16 +690,21 @@ async function syncWithN8n() {
                 updateDashboardStats();
             }
 
-            showAlert('n8n workflow sync completed successfully! Data updated.', 'success');
+            showAlert('Google Sheets data refreshed successfully!', 'success');
         } else {
-            console.error('❌ n8n sync failed:', result);
-            const errorMessage = result.message || result.error || 'Failed to sync with n8n workflow';
-            showAlert(`Sync failed: ${errorMessage}`, 'error');
+            console.error('❌ Google Sheets refresh failed:', result);
+            const errorMessage = result.message || result.error || 'Failed to refresh data from Google Sheets';
+            showAlert(`Refresh failed: ${errorMessage}`, 'error');
+
+            // Show troubleshooting info if available
+            if (result.troubleshooting) {
+                console.log('💡 Troubleshooting tips:', result.troubleshooting);
+            }
         }
 
     } catch (error) {
-        console.error('❌ n8n sync error:', error);
-        showAlert(`n8n sync error: ${error.message}`, 'error');
+        console.error('❌ Google Sheets refresh error:', error);
+        showAlert(`Refresh error: ${error.message}`, 'error');
     } finally {
         // Restore button state
         syncButton.innerHTML = originalText;
