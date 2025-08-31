@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Meeting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600&family=Roboto:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨‍💼</text></svg>">
+</head>
+
+<body class="admin-body">
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="admin-header-container">
+            <div class="admin-logo">Admin Dashboard</div>
+            <div class="admin-user-info">
+                <span class="admin-user-name" id="adminUserName">Administrator</span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container" style="padding-top: 32px;">
+        <!-- Alert Container -->
+        <div id="alertContainer" style="display: none;"></div>
+
+        <!-- Dashboard Stats -->
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total Requests</span>
+                    <span class="stat-icon">📊</span>
+                </div>
+                <div class="stat-value" id="totalRequests">0</div>
+                <div class="stat-change neutral">
+                    <span>All time</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Pending</span>
+                    <span class="stat-icon">⏳</span>
+                </div>
+                <div class="stat-value" id="pendingRequests">0</div>
+                <div class="stat-change neutral">
+                    <span>Awaiting review</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Approved</span>
+                    <span class="stat-icon">✅</span>
+                </div>
+                <div class="stat-value" id="approvedRequests">0</div>
+                <div class="stat-change positive">
+                    <span>Confirmed meetings</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">This Week</span>
+                    <span class="stat-icon">📅</span>
+                </div>
+                <div class="stat-value" id="weeklyRequests">0</div>
+                <div class="stat-change neutral">
+                    <span>New requests</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meetings Section -->
+        <div class="meetings-section">
+            <div class="meetings-header">
+                <h2 class="meetings-title">Meeting Requests</h2>
+                <div class="header-buttons">
+                    <button class="sync-btn" onclick="syncWithN8n()">
+                        <span>⚡</span>
+                        <span>Sync with n8n</span>
+                    </button>
+                    <button class="refresh-btn" onclick="refreshMeetings()">
+                        <span>🔄</span>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-container">
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label class="filter-label">Status:</label>
+                        <select id="statusFilter" class="filter-select" onchange="applyFilters()">
+                            <option value="">All</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="rescheduled">Rescheduled</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Priority:</label>
+                        <select id="priorityFilter" class="filter-select" onchange="applyFilters()">
+                            <option value="">All</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="high">High</option>
+                            <option value="normal">Normal</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Type:</label>
+                        <select id="typeFilter" class="filter-select" onchange="applyFilters()">
+                            <option value="">All</option>
+                            <option value="online">Online</option>
+                            <option value="offline">In-Person</option>
+                            <option value="hybrid">Hybrid</option>
+                        </select>
+                    </div>
+
+                    <button class="clear-filters" onclick="clearFilters()">Clear Filters</button>
+                </div>
+            </div>
+
+            <!-- Meetings Table -->
+            <div style="overflow-x: auto;">
+                <table class="meetings-table">
+                    <thead>
+                        <tr>
+                            <th>Requester</th>
+                            <th>Purpose</th>
+                            <th>Date & Time</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Duration</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="meetingsTableBody">
+                        <tr class="table-loading">
+                            <td colspan="8">Loading meetings...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">📭</div>
+                <h3>No Meeting Requests</h3>
+                <p>There are no meeting requests to display. Check back later or adjust your filters.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meeting Details Modal -->
+    <div id="meetingModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Meeting Details</h2>
+                <button class="modal-close" onclick="closeMeetingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="meeting-details" id="meetingDetails">
+                    <!-- Meeting details will be populated here -->
+                </div>
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <!-- Action buttons will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Modal (Approve/Reject/Reschedule) -->
+    <div id="actionModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="actionModalTitle">Meeting Action</h2>
+                <button class="modal-close" onclick="closeActionModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="actionForm">
+                    <input type="hidden" id="actionRequestId" name="requestId">
+                    <input type="hidden" id="actionType" name="action">
+
+                    <!-- Admin Notes -->
+                    <div class="form-group">
+                        <label for="adminNotes" class="form-label">Notes</label>
+                        <textarea id="adminNotes" name="adminNotes" class="form-textarea"
+                            placeholder="Add any notes or comments about this decision..."></textarea>
+                    </div>
+
+                    <!-- Reschedule Fields (shown only for reschedule action) -->
+                    <div id="rescheduleFields" style="display: none;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="newDate" class="form-label">New Date</label>
+                                <input type="date" id="newDate" name="newDate" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="newTime" class="form-label">New Time</label>
+                                <input type="time" id="newTime" name="newTime" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="newDuration" class="form-label">Duration (minutes)</label>
+                                <select id="newDuration" name="newDuration" class="form-select">
+                                    <option value="">Keep original</option>
+                                    <option value="30">30 minutes</option>
+                                    <option value="45">45 minutes</option>
+                                    <option value="60">1 hour</option>
+                                    <option value="90">1.5 hours</option>
+                                    <option value="120">2 hours</option>
+                                    <option value="180">3 hours</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="newLocation" class="form-label">Location</label>
+                                <input type="text" id="newLocation" name="newLocation" class="form-input"
+                                    placeholder="New meeting location (if applicable)">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeActionModal()">Cancel</button>
+                <button class="btn" id="confirmActionBtn" onclick="confirmAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="/js/admin-dashboard.js"></script>
+</body>
+
+</html>

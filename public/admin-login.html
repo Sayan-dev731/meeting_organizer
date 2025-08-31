@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Meeting System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600&family=Roboto:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨‍💼</text></svg>">
+</head>
+
+<body class="admin-body">
+    <div class="admin-login">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="admin-icon">👨‍💼</div>
+                <h1>Admin Login</h1>
+                <p>Please sign in to access the admin dashboard</p>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer" style="display: none;"></div>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username" class="form-label required">Username</label>
+                    <input type="text" id="username" name="username" class="form-input" required
+                        placeholder="Enter your username" autocomplete="username">
+                    <div class="error-message" id="username-error" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label required">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" required
+                        placeholder="Enter your password" autocomplete="current-password">
+                    <div class="error-message" id="password-error" style="display: none;"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="loginBtn" style="width: 100%; margin-top: 24px;">
+                    <span id="loginText">Sign In</span>
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 24px;">
+                <a href="/" style="color: var(--google-blue); text-decoration: none; font-size: 14px;">
+                    ← Back to Meeting Request
+                </a>
+            </div>
+
+            <div
+                style="background: var(--google-light-gray); padding: 16px; border-radius: 8px; margin-top: 24px; text-align: center;">
+                <p style="font-size: 12px; color: var(--google-gray); margin: 0;">
+                    For security purposes, only authorized administrators can access this panel.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="/js/admin-login.js"></script>
+</body>
+
+</html>

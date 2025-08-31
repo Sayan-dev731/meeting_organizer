@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Arrangement System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600&family=Roboto:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo">Meeting System</a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="/" class="active">Book Meeting</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                    <li><a href="/admin">Admin</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Schedule Your Meeting</h1>
+                <p>Connect with our team effortlessly. Book your meeting in just a few clicks and let us handle the
+                    rest.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Meeting Form Section -->
+    <section class="meeting-form-section">
+        <div class="container">
+            <div class="meeting-form-container">
+                <div class="form-header">
+                    <h2>Book Your Meeting</h2>
+                    <p>Fill out the form below and we'll get back to you within 24 hours</p>
+                </div>
+
+                <form class="meeting-form" id="meetingForm">
+                    <!-- Alert Container -->
+                    <div id="alertContainer" style="display: none;"></div>
+
+                    <!-- Personal Information -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="userName" class="form-label required">Full Name</label>
+                            <input type="text" id="userName" name="userName" class="form-input" required
+                                placeholder="Enter your full name">
+                            <div class="error-message" id="userName-error" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="userEmail" class="form-label required">Email Address</label>
+                            <input type="email" id="userEmail" name="userEmail" class="form-input" required
+                                placeholder="your.email@company.com">
+                            <div class="error-message" id="userEmail-error" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="userPhone" class="form-label required">Phone Number</label>
+                            <input type="tel" id="userPhone" name="userPhone" class="form-input" required
+                                placeholder="+1 (555) 123-4567">
+                            <div class="error-message" id="userPhone-error" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="userCompany" class="form-label">Company</label>
+                            <input type="text" id="userCompany" name="userCompany" class="form-input"
+                                placeholder="Your company name">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="userPosition" class="form-label">Job Title</label>
+                            <input type="text" id="userPosition" name="userPosition" class="form-input"
+                                placeholder="Your job title or position">
+                        </div>
+                    </div>
+
+                    <!-- Meeting Details -->
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="meetingPurpose" class="form-label required">Meeting Purpose</label>
+                            <input type="text" id="meetingPurpose" name="meetingPurpose" class="form-input" required
+                                placeholder="Brief description of meeting purpose">
+                            <div class="error-message" id="meetingPurpose-error" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="meetingDescription" class="form-label">Meeting Description</label>
+                            <textarea id="meetingDescription" name="meetingDescription" class="form-textarea"
+                                placeholder="Provide more details about the meeting agenda, topics to discuss, or any specific requirements..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="preferredDate" class="form-label required">Preferred Date</label>
+                            <input type="date" id="preferredDate" name="preferredDate" class="form-input" required>
+                            <div class="error-message" id="preferredDate-error" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="preferredTime" class="form-label required">Preferred Time</label>
+                            <input type="time" id="preferredTime" name="preferredTime" class="form-input" required>
+                            <div class="error-message" id="preferredTime-error" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="estimatedDuration" class="form-label">Duration (minutes)</label>
+                            <select id="estimatedDuration" name="estimatedDuration" class="form-select">
+                                <option value="30">30 minutes</option>
+                                <option value="45">45 minutes</option>
+                                <option value="60" selected>1 hour</option>
+                                <option value="90">1.5 hours</option>
+                                <option value="120">2 hours</option>
+                                <option value="180">3 hours</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="urgency" class="form-label">Priority Level</label>
+                            <select id="urgency" name="urgency" class="form-select">
+                                <option value="low">Low</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Meeting Type -->
+                    <div class="form-group">
+                        <label class="form-label required">Meeting Type</label>
+                        <div class="radio-group" id="meetingTypeGroup">
+                            <label class="radio-option" data-value="online">
+                                <input type="radio" name="meetingType" value="online" required>
+                                <span>🌐 Online Meeting</span>
+                            </label>
+                            <label class="radio-option" data-value="offline">
+                                <input type="radio" name="meetingType" value="offline" required>
+                                <span>🏢 In-Person Meeting</span>
+                            </label>
+                            <label class="radio-option" data-value="hybrid">
+                                <input type="radio" name="meetingType" value="hybrid" required>
+                                <span>🔄 Hybrid Meeting</span>
+                            </label>
+                        </div>
+                        <div class="error-message" id="meetingType-error" style="display: none;"></div>
+                    </div>
+
+                    <!-- Location (shows when offline or hybrid is selected) -->
+                    <div class="form-group" id="locationGroup" style="display: none;">
+                        <label for="location" class="form-label">Meeting Location</label>
+                        <input type="text" id="location" name="location" class="form-input"
+                            placeholder="Enter meeting location or address">
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="form-group">
+                        <label for="additionalNotes" class="form-label">Additional Notes</label>
+                        <textarea id="additionalNotes" name="additionalNotes" class="form-textarea"
+                            placeholder="Any additional information, special requirements, or questions you'd like to share..."></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div style="text-align: center; margin-top: 32px;">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span id="submitText">Submit Meeting Request</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" style="padding: 80px 0; background: white;">
+        <div class="container">
+            <h2 style="text-align: center; font-size: 32px; margin-bottom: 48px; color: var(--google-dark-gray);">How It
+                Works</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
+                <div style="text-align: center; padding: 24px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📝</div>
+                    <h3 style="font-size: 20px; margin-bottom: 12px; color: var(--google-blue);">1. Fill the Form</h3>
+                    <p style="color: var(--google-gray);">Provide your details and meeting requirements using our simple
+                        form.</p>
+                </div>
+                <div style="text-align: center; padding: 24px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">⏰</div>
+                    <h3 style="font-size: 20px; margin-bottom: 12px; color: var(--google-blue);">2. Get Confirmation
+                    </h3>
+                    <p style="color: var(--google-gray);">Our admin team will review and respond within 24 hours.</p>
+                </div>
+                <div style="text-align: center; padding: 24px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🤝</div>
+                    <h3 style="font-size: 20px; margin-bottom: 12px; color: var(--google-blue);">3. Attend Meeting</h3>
+                    <p style="color: var(--google-gray);">Receive calendar invitation and join at the scheduled time.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <p>&copy; 2024 Meeting Arrangement System. Powered by n8n & Google Workspace.</p>
+            <ul class="footer-links">
+                <li><a href="mailto:admin@company.com">Contact Support</a></li>
+                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="#">Terms of Service</a></li>
+                <li><a href="/admin">Admin Login</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Meeting Request Submitted</h2>
+                <button class="modal-close" onclick="closeSuccessModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div style="font-size: 64px; margin-bottom: 16px;">✅</div>
+                    <h3 style="color: var(--google-green); margin-bottom: 16px;">Request Submitted Successfully!</h3>
+                    <p style="color: var(--google-gray); margin-bottom: 24px;">
+                        Thank you for your meeting request. Our admin team will review your submission and get back to
+                        you within 24 hours.
+                    </p>
+                </div>
+
+                <div class="meeting-summary" id="meetingSummary">
+                    <h3>Meeting Request Summary</h3>
+                    <div id="summaryContent"></div>
+                </div>
+
+                <div style="background: var(--google-light-gray); padding: 16px; border-radius: 8px; margin-top: 24px;">
+                    <p style="font-size: 14px; color: var(--google-gray); margin-bottom: 8px;">
+                        <strong>What happens next?</strong>
+                    </p>
+                    <ul style="font-size: 14px; color: var(--google-gray); margin-left: 16px;">
+                        <li>You'll receive a confirmation email shortly</li>
+                        <li>Our admin team will review your request</li>
+                        <li>You'll get an approval/scheduling email within 24 hours</li>
+                        <li>Calendar invitation will be sent upon approval</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeSuccessModal()">Close</button>
+                <button class="btn btn-secondary" onclick="resetForm()">Submit Another Request</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/user-panel.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,2041 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meeting-request",
+        "options": {}
+      },
+      "id": "624b4ef5-0cd7-4068-a686-833982a17432",
+      "name": "QR Code Scan Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -2576,
+        -368
+      ],
+      "webhookId": "meeting-request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process meeting request from QR code scan\nconst webhookData = $input.first().json.body || $input.first().json;\n\nconsole.log('Received meeting request:', webhookData);\n\n// Validate required fields\nconst requiredFields = ['userName', 'userEmail', 'userPhone', 'meetingPurpose', 'preferredDate', 'preferredTime', 'meetingType'];\nconst missingFields = requiredFields.filter(field => !webhookData[field]);\n\nif (missingFields.length > 0) {\n  throw new Error(`Missing required fields: ${missingFields.join(', ')}`);\n}\n\n// Create structured meeting request data\nconst meetingRequest = {\n  // User Information\n  userName: webhookData.userName,\n  userEmail: webhookData.userEmail,\n  userPhone: webhookData.userPhone || '',\n  userCompany: webhookData.userCompany || '',\n  userPosition: webhookData.userPosition || '',\n  \n  // Meeting Details\n  meetingPurpose: webhookData.meetingPurpose,\n  meetingDescription: webhookData.meetingDescription || '',\n  preferredDate: webhookData.preferredDate,\n  preferredTime: webhookData.preferredTime,\n  estimatedDuration: webhookData.estimatedDuration || '60', // minutes\n  meetingType: webhookData.meetingType, // 'online', 'offline', 'hybrid'\n  location: webhookData.location || '',\n  \n  // Additional Information\n  urgency: webhookData.urgency || 'normal', // 'low', 'normal', 'high', 'urgent'\n  additionalNotes: webhookData.additionalNotes || '',\n  attachments: webhookData.attachments || [],\n  \n  // System fields\n  requestId: `req_${Date.now()}_${Math.random().toString(36).substring(7)}`,\n  timestamp: new Date().toISOString(),\n  status: 'pending', // 'pending', 'approved', 'rejected', 'rescheduled'\n  adminEmail: 'admin@company.com' // Replace with actual admin email\n};\n\n// Create calendar event proposal\nconst startDateTime = new Date(`${meetingRequest.preferredDate}T${meetingRequest.preferredTime}`);\nconst endDateTime = new Date(startDateTime.getTime() + (parseInt(meetingRequest.estimatedDuration) * 60000));\n\nmeetingRequest.proposedStartTime = startDateTime.toISOString();\nmeetingRequest.proposedEndTime = endDateTime.toISOString();\n\nconsole.log('Processed meeting request:', meetingRequest);\n\nreturn {\n  json: meetingRequest\n};"
+      },
+      "id": "f192679f-55a6-4f40-bc96-def0e2687d45",
+      "name": "Process Meeting Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2368,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TP79wo4JbnU9Dj7NOVA_VpTiU5UEAyvHcvRMGBeM7T8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Meeting_Requests",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "Request_ID": "={{ $json.requestId }}",
+            "Timestamp": "={{ $json.timestamp }}",
+            "User_Name": "={{ $json.userName }}",
+            "User_Email": "={{ $json.userEmail }}",
+            "User_Phone": "={{ $json.userPhone }}",
+            "User_Company": "={{ $json.userCompany }}",
+            "Meeting_Type": "={{ $json.meetingType }}",
+            "Meeting_Purpose": "={{ $json.meetingPurpose }}",
+            "Preferred_Date": "={{ $json.preferredDate }}",
+            "Preferred_Time": "={{ $json.preferredTime }}",
+            "Duration_Minutes": "={{ $json.estimatedDuration }}",
+            "Status": "={{ $json.status }}",
+            "Priority": "={{ $json.urgency }}",
+            "Location": "={{ $json.location }}",
+            "Created_Date": "={{ $json.timestamp }}",
+            "Last_Updated": "={{ $json.timestamp }}",
+            "Reminder_Sent": "No",
+            "Follow_Up_Required": "No"
+          },
+          "matchingColumns": [
+            "Request_ID"
+          ],
+          "schema": [
+            {
+              "id": "Request_ID",
+              "displayName": "Request_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "User_Name",
+              "displayName": "User_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "User_Email",
+              "displayName": "User_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "User_Phone",
+              "displayName": "User_Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "User_Company",
+              "displayName": "User_Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting_Type",
+              "displayName": "Meeting_Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting_Purpose",
+              "displayName": "Meeting_Purpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preferred_Date",
+              "displayName": "Preferred_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preferred_Time",
+              "displayName": "Preferred_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Duration_Minutes",
+              "displayName": "Duration_Minutes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting_Details",
+              "displayName": "Meeting_Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Admin_Response",
+              "displayName": "Admin_Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Confirmed_Date",
+              "displayName": "Confirmed_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Confirmed_Time",
+              "displayName": "Confirmed_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Calendar_Event_ID",
+              "displayName": "Calendar_Event_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created_Date",
+              "displayName": "Created_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last_Updated",
+              "displayName": "Last_Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting_Link",
+              "displayName": "Meeting_Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reminder_Sent",
+              "displayName": "Reminder_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follow_Up_Required",
+              "displayName": "Follow_Up_Required",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "userName",
+              "displayName": "userName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "userEmail",
+              "displayName": "userEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "userPhone",
+              "displayName": "userPhone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "userCompany",
+              "displayName": "userCompany",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "userPosition",
+              "displayName": "userPosition",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "meetingPurpose",
+              "displayName": "meetingPurpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "meetingDescription",
+              "displayName": "meetingDescription",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preferredDate",
+              "displayName": "preferredDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preferredTime",
+              "displayName": "preferredTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "estimatedDuration",
+              "displayName": "estimatedDuration",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "meetingType",
+              "displayName": "meetingType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "additionalNotes",
+              "displayName": "additionalNotes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "attachments",
+              "displayName": "attachments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "requestId",
+              "displayName": "requestId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "adminEmail",
+              "displayName": "adminEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "proposedStartTime",
+              "displayName": "proposedStartTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "proposedEndTime",
+              "displayName": "proposedEndTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "633e1fbd-e7e1-4652-b0c6-936b1546504f",
+      "name": "Log Meeting Request",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -2176,
+        -368
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4todXaxVSYlQaoKz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare admin notification email\nconst meetingData = $input.first().json;\n\nconst emailSubject = `🔔 New Meeting Request - ${meetingData.userName}`;\n\nconst emailContent = `\nDear Admin,\n\nYou have received a new meeting request through the QR code system.\n\n👤 **Requester Information:**\n• Name: ${meetingData.userName}\n• Email: ${meetingData.userEmail}\n• Phone: ${meetingData.userPhone}\n• Company: ${meetingData.userCompany}\n• Position: ${meetingData.userPosition}\n\n📅 **Meeting Details:**\n• Purpose: ${meetingData.meetingPurpose}\n• Description: ${meetingData.meetingDescription}\n• Preferred Date: ${meetingData.preferredDate}\n• Preferred Time: ${meetingData.preferredTime}\n• Duration: ${meetingData.estimatedDuration} minutes\n• Type: ${meetingData.meetingType}\n• Location: ${meetingData.location}\n• Urgency: ${meetingData.urgency}\n\n📝 **Additional Notes:**\n${meetingData.additionalNotes}\n\n🎯 **Action Required:**\nPlease review this meeting request and take one of the following actions:\n\n✅ **APPROVE** - Confirm the meeting at the requested time\n📅 **RESCHEDULE** - Propose an alternative time\n❌ **REJECT** - Decline the meeting request\n\n**Quick Action Links:**\n• Approve Meeting: [APPROVAL_LINK_PLACEHOLDER]\n• View Google Calendar: https://calendar.google.com\n• Manage Requests: [ADMIN_DASHBOARD_PLACEHOLDER]\n\n**Request ID:** ${meetingData.requestId}\n**Submitted:** ${new Date(meetingData.timestamp).toLocaleString()}\n\n---\nThis email was generated automatically by the Meeting Arrangement System.\nPowered by n8n & Google Workspace\n`;\n\nreturn {\n  json: {\n    to: meetingData.adminEmail,\n    subject: emailSubject,\n    content: emailContent,\n    requestId: meetingData.requestId,\n    requestData: meetingData\n  }\n};"
+      },
+      "id": "ab8c4a57-2b5a-4fed-8d2e-9a2908fb4155",
+      "name": "Prepare Admin Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1968,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "09bc67d1-72d5-4ef4-83cd-c5a1c737763a",
+      "name": "Send Admin Notification",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1776,
+        -368
+      ],
+      "webhookId": "557953a3-12e4-4123-b67c-b092bbafcd3b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TDdK0ZuO7UdXtxRt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare user confirmation email\nconst meetingData = $('Process Meeting Request').first().json;\n\nconst emailSubject = `✅ Meeting Request Received - Reference: ${meetingData.requestId.substring(4, 10).toUpperCase()}`;\n\nconst emailContent = `\nDear ${meetingData.userName},\n\nThank you for your meeting request! We have successfully received your submission and it is currently being reviewed.\n\n📋 **Your Meeting Request Summary:**\n• Purpose: ${meetingData.meetingPurpose}\n• Preferred Date & Time: ${meetingData.preferredDate} at ${meetingData.preferredTime}\n• Duration: ${meetingData.estimatedDuration} minutes\n• Type: ${meetingData.meetingType}\n• Location: ${meetingData.location}\n\n⏰ **What Happens Next:**\n1. Our admin team will review your request within 24 hours\n2. You'll receive a confirmation email with meeting details\n3. A calendar invitation will be sent upon approval\n4. Reminder emails will be sent before the meeting\n\n📞 **Need to Make Changes?**\nIf you need to modify or cancel your request, please reply to this email with your reference number: **${meetingData.requestId.substring(4, 10).toUpperCase()}**\n\n📧 **Contact Information:**\nIf you have any questions, please don't hesitate to contact us at admin@company.com\n\n**Request Details:**\n• Reference Number: ${meetingData.requestId.substring(4, 10).toUpperCase()}\n• Submitted: ${new Date(meetingData.timestamp).toLocaleString()}\n• Status: Pending Review\n\nThank you for choosing our meeting arrangement system!\n\nBest regards,\nMeeting Coordination Team\n\n---\nThis is an automated confirmation email.\nPowered by n8n & Google Workspace\n`;\n\nreturn {\n  json: {\n    to: meetingData.userEmail,\n    subject: emailSubject,\n    content: emailContent,\n    requestId: meetingData.requestId,\n    userName: meetingData.userName\n  }\n};"
+      },
+      "id": "920cda5b-e107-4819-8691-3ca8c6a03528",
+      "name": "Prepare User Confirmation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1968,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "f05701e6-29c8-4580-aac7-4beda96ffd0a",
+      "name": "Send User Confirmation",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1776,
+        -176
+      ],
+      "webhookId": "5c5833fe-7138-4c1e-8115-64cd7a875263",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TDdK0ZuO7UdXtxRt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meeting-action",
+        "options": {}
+      },
+      "id": "6db21129-67ef-4b84-b79f-4916d1297ef6",
+      "name": "Admin Action Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        -576
+      ],
+      "webhookId": "meeting-action"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process admin action (approve/reject/reschedule)\nconst actionData = $input.first().json.body || $input.first().json;\n\nconsole.log('Received admin action:', actionData);\n\n// Validate admin action\nif (!actionData.requestId || !actionData.action) {\n  throw new Error('Missing required fields: requestId and action');\n}\n\nconst validActions = ['approve', 'reject', 'reschedule'];\nif (!validActions.includes(actionData.action)) {\n  throw new Error('Invalid action. Must be: approve, reject, or reschedule');\n}\n\n// Structure the action data\nconst processedAction = {\n  requestId: actionData.requestId,\n  action: actionData.action,\n  adminEmail: actionData.adminEmail || 'admin@company.com',\n  adminNotes: actionData.adminNotes || '',\n  timestamp: new Date().toISOString(),\n  \n  // For reschedule action\n  newDate: actionData.newDate || null,\n  newTime: actionData.newTime || null,\n  newDuration: actionData.newDuration || null,\n  newLocation: actionData.newLocation || null,\n  newMeetingType: actionData.newMeetingType || null,\n  \n  // Meeting details from original request (to be populated from sheets lookup)\n  originalRequestData: actionData.originalRequestData || null\n};\n\nconsole.log('Processed admin action:', processedAction);\n\nreturn {\n  json: processedAction\n};"
+      },
+      "id": "164dd4d3-a863-4e9c-be15-76064516994c",
+      "name": "Process Admin Action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1248,
+        -576
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1TP79wo4JbnU9Dj7NOVA_VpTiU5UEAyvHcvRMGBeM7T8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Admin_Actions",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Action_ID"
+          ],
+          "schema": [
+            {
+              "id": "Action_ID",
+              "displayName": "Action_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Request_ID",
+              "displayName": "Request_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin_Email",
+              "displayName": "Admin_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action_Type",
+              "displayName": "Action_Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action_Timestamp",
+              "displayName": "Action_Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin_Notes",
+              "displayName": "Admin_Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "New_Date",
+              "displayName": "New_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "New_Time",
+              "displayName": "New_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rejection_Reason",
+              "displayName": "Rejection_Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Calendar_Updated",
+              "displayName": "Calendar_Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email_Sent",
+              "displayName": "Email_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Response_Time_Hours",
+              "displayName": "Response_Time_Hours",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "7c29b059-a324-43cd-ab4c-03502e380234",
+      "name": "Lookup Meeting Request",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -1040,
+        -576
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4todXaxVSYlQaoKz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Process Admin Action').first().json.action }}",
+              "rightValue": "approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "98dfc36d-3f60-495e-88ee-f3e4ea238d8f",
+      "name": "Check Action Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        -576
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare approval email for user\nconst actionData = $('Process Admin Action').first().json;\nconst meetingData = $('Lookup Meeting Request').first().json;\nconst calendarEvent = $input.first().json;\n\nconst emailSubject = `✅ Meeting Approved - ${meetingData.meetingPurpose}`;\n\nconst emailContent = `\nDear ${meetingData.userName},\n\nGreat news! Your meeting request has been approved.\n\n📅 **Meeting Details:**\n• Purpose: ${meetingData.meetingPurpose}\n• Date & Time: ${new Date(meetingData.proposedStartTime).toLocaleString()}\n• Duration: ${meetingData.estimatedDuration} minutes\n• Type: ${meetingData.meetingType}\n• Location: ${meetingData.location}\n\n🔗 **Calendar Event:**\nA calendar invitation has been sent to your email address (${meetingData.userEmail}). Please accept the invitation to confirm your attendance.\n\n📧 **Admin Notes:**\n${actionData.adminNotes || 'No additional notes provided.'}\n\n⏰ **Important Reminders:**\n• You will receive email reminders 24 hours and 1 hour before the meeting\n• Please arrive 5 minutes early for the meeting\n• If you need to reschedule or cancel, please contact us at least 24 hours in advance\n\n📞 **Contact Information:**\nIf you have any questions, please contact us at admin@company.com\n\n**Meeting ID:** ${calendarEvent.id}\n**Reference Number:** ${meetingData.requestId.substring(4, 10).toUpperCase()}\n\nWe look forward to meeting with you!\n\nBest regards,\nMeeting Coordination Team\n\n---\nThis is an automated email.\nPowered by n8n & Google Workspace\n`;\n\nreturn {\n  json: {\n    to: meetingData.userEmail,\n    subject: emailSubject,\n    content: emailContent,\n    meetingData: meetingData,\n    calendarEventId: calendarEvent.id\n  }\n};"
+      },
+      "id": "cac805f3-ebee-4414-b42d-41692155c0f0",
+      "name": "Prepare Approval Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        -672
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "e54cbbba-1146-4ea2-9955-7bd84e891676",
+      "name": "Send Approval Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        -672
+      ],
+      "webhookId": "9bbced11-fec3-47c5-9799-3082289c2077",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TDdK0ZuO7UdXtxRt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle rejection - prepare email\nconst actionData = $('Process Admin Action').first().json;\nconst meetingData = $('Lookup Meeting Request').first().json;\n\nconst emailSubject = `❌ Meeting Request Declined - ${meetingData.meetingPurpose}`;\n\nconst emailContent = `\nDear ${meetingData.userName},\n\nThank you for your meeting request. After careful consideration, we are unable to accommodate your meeting at this time.\n\n📋 **Original Request:**\n• Purpose: ${meetingData.meetingPurpose}\n• Requested Date & Time: ${meetingData.preferredDate} at ${meetingData.preferredTime}\n• Duration: ${meetingData.estimatedDuration} minutes\n\n📝 **Reason for Decline:**\n${actionData.adminNotes || 'No specific reason provided.'}\n\n🔄 **Alternative Options:**\n• You may submit a new meeting request for different dates\n• Contact us directly at admin@company.com to discuss alternatives\n• Consider scheduling for a later date when availability opens up\n\n📞 **Need Assistance?**\nIf you have any questions or would like to discuss alternative arrangements, please don't hesitate to contact us.\n\n**Reference Number:** ${meetingData.requestId.substring(4, 10).toUpperCase()}\n**Decision Date:** ${new Date(actionData.timestamp).toLocaleString()}\n\nThank you for your understanding.\n\nBest regards,\nMeeting Coordination Team\n\n---\nThis is an automated email.\nPowered by n8n & Google Workspace\n`;\n\nreturn {\n  json: {\n    to: meetingData.userEmail,\n    subject: emailSubject,\n    content: emailContent,\n    meetingData: meetingData\n  }\n};"
+      },
+      "id": "3b6c6d25-cc44-45c9-ab35-99f0dcf34e96",
+      "name": "Prepare Rejection Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "d8665ed8-bd6f-42b1-aa99-b1c1d1182a9a",
+      "name": "Send Rejection Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        -480
+      ],
+      "webhookId": "02882c48-766a-415b-989c-b2b2dc72ca6d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TDdK0ZuO7UdXtxRt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Process Admin Action').first().json.action }}",
+              "rightValue": "reschedule",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "632fbc6a-b842-4f91-b330-2aeb38ed8d00",
+      "name": "Check if Reschedule",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare reschedule proposal\nconst actionData = $('Process Admin Action').first().json;\nconst meetingData = $('Lookup Meeting Request').first().json;\n\n// Calculate new start and end times\nconst newStartDateTime = new Date(`${actionData.newDate}T${actionData.newTime}`);\nconst duration = actionData.newDuration || meetingData.estimatedDuration;\nconst newEndDateTime = new Date(newStartDateTime.getTime() + (parseInt(duration) * 60000));\n\nconst emailSubject = `📅 Meeting Reschedule Proposal - ${meetingData.meetingPurpose}`;\n\nconst emailContent = `\nDear ${meetingData.userName},\n\nThank you for your meeting request. We would like to propose an alternative time for your meeting.\n\n📋 **Original Request:**\n• Date & Time: ${meetingData.preferredDate} at ${meetingData.preferredTime}\n• Duration: ${meetingData.estimatedDuration} minutes\n\n📅 **Proposed New Schedule:**\n• Date & Time: ${actionData.newDate} at ${actionData.newTime}\n• Duration: ${duration} minutes\n• Type: ${actionData.newMeetingType || meetingData.meetingType}\n• Location: ${actionData.newLocation || meetingData.location}\n\n📝 **Reason for Reschedule:**\n${actionData.adminNotes || 'Scheduling conflict with the original time.'}\n\n✅ **Action Required:**\nPlease reply to this email with your response:\n• **ACCEPT** - Confirm the new meeting time\n• **DECLINE** - Decline the proposed time\n• **COUNTER** - Suggest an alternative time\n\n⏰ **Response Deadline:**\nPlease respond within 48 hours to secure your meeting slot.\n\n📞 **Questions?**\nIf you have any questions, please contact us at admin@company.com\n\n**Reference Number:** ${meetingData.requestId.substring(4, 10).toUpperCase()}\n**Proposal Date:** ${new Date(actionData.timestamp).toLocaleString()}\n\nWe appreciate your flexibility and look forward to meeting with you!\n\nBest regards,\nMeeting Coordination Team\n\n---\nThis is an automated email.\nPowered by n8n & Google Workspace\n`;\n\nreturn {\n  json: {\n    to: meetingData.userEmail,\n    subject: emailSubject,\n    content: emailContent,\n    meetingData: meetingData,\n    newSchedule: {\n      startTime: newStartDateTime.toISOString(),\n      endTime: newEndDateTime.toISOString(),\n      date: actionData.newDate,\n      time: actionData.newTime,\n      duration: duration,\n      location: actionData.newLocation || meetingData.location,\n      meetingType: actionData.newMeetingType || meetingData.meetingType\n    }\n  }\n};"
+      },
+      "id": "bd953a24-26e5-4185-9756-765a7f88b5f2",
+      "name": "Prepare Reschedule Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "8316e591-fcc0-476b-a74f-eaca9a3cce0e",
+      "name": "Send Reschedule Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        -272
+      ],
+      "webhookId": "d05e4071-c2c4-4ef3-9d25-e152f58ea652",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TDdK0ZuO7UdXtxRt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "715ee370-b494-437a-878d-45c0b0a2246d",
+      "name": "24 Hour Reminder Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -2576,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TP79wo4JbnU9Dj7NOVA_VpTiU5UEAyvHcvRMGBeM7T8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Meeting_Requests",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "2f5bb030-9e2b-4dfc-9388-8ffe1799c813",
+      "name": "Get Upcoming Meetings",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -2368,
+        32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4todXaxVSYlQaoKz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter meetings that need 24-hour reminders\nconst allMeetings = $input.all();\nconst now = new Date();\nconst twentyFourHoursFromNow = new Date(now.getTime() + (24 * 60 * 60 * 1000));\nconst twentyThreeHoursFromNow = new Date(now.getTime() + (23 * 60 * 60 * 1000));\n\nconst upcomingMeetings = allMeetings.filter(meeting => {\n  const meetingData = meeting.json;\n  \n  // Only process approved meetings\n  if (meetingData.status !== 'approved') {\n    return false;\n  }\n  \n  // Check if meeting is in the 24-hour reminder window\n  const meetingStart = new Date(meetingData.proposedStartTime);\n  \n  return meetingStart >= twentyThreeHoursFromNow && meetingStart <= twentyFourHoursFromNow;\n});\n\nconsole.log(`Found ${upcomingMeetings.length} meetings needing 24-hour reminders`);\n\nreturn upcomingMeetings;"
+      },
+      "id": "4bc35fd6-e6e4-4b40-bf55-34f8eb409c6a",
+      "name": "Filter 24h Reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2176,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare 24-hour reminder email\nconst meetingData = $input.first().json;\n\nconst emailSubject = `⏰ Meeting Reminder - Tomorrow at ${new Date(meetingData.proposedStartTime).toLocaleTimeString()}`;\n\nconst emailContent = `\nDear ${meetingData.userName},\n\nThis is a friendly reminder about your upcoming meeting scheduled for tomorrow.\n\n📅 **Meeting Details:**\n• Purpose: ${meetingData.meetingPurpose}\n• Date & Time: ${new Date(meetingData.proposedStartTime).toLocaleString()}\n• Duration: ${meetingData.estimatedDuration} minutes\n• Type: ${meetingData.meetingType}\n• Location: ${meetingData.location}\n\n📝 **Meeting Description:**\n${meetingData.meetingDescription}\n\n✅ **Preparation Checklist:**\n• Review the meeting agenda and purpose\n• Prepare any questions or materials you'd like to discuss\n• Test your technology if it's an online meeting\n• Plan to arrive 5 minutes early\n\n📞 **Contact Information:**\nIf you need to make any last-minute changes, please contact us immediately at admin@company.com\n\n🔄 **Need to Reschedule?**\nIf something urgent comes up, please let us know as soon as possible.\n\n**Reference Number:** ${meetingData.requestId.substring(4, 10).toUpperCase()}\n\nWe look forward to meeting with you tomorrow!\n\nBest regards,\nMeeting Coordination Team\n\n---\nThis is an automated reminder email.\nPowered by n8n & Google Workspace\n`;\n\nreturn {\n  json: {\n    to: meetingData.userEmail,\n    subject: emailSubject,\n    content: emailContent,\n    meetingData: meetingData\n  }\n};"
+      },
+      "id": "ced45946-766a-4e51-9cd4-d93e4043639d",
+      "name": "Prepare 24h Reminder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1968,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "7b76606c-f7fe-4e4b-a0e4-28edb9547fee",
+      "name": "Send 24h Reminder",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1776,
+        32
+      ],
+      "webhookId": "f3c991d0-083a-41c7-b4c7-1687b85a8f62",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TDdK0ZuO7UdXtxRt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "2b6a8a2a-31bb-4d3c-b2f9-5602d8bf3dce",
+      "name": "1 Hour Reminder Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TP79wo4JbnU9Dj7NOVA_VpTiU5UEAyvHcvRMGBeM7T8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Meeting_Requests",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "a9ec32d7-daee-4d24-b196-a226e8f0bb2f",
+      "name": "Get Meetings for 1h Reminder",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -1376,
+        240
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4todXaxVSYlQaoKz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter meetings that need 1-hour reminders\nconst allMeetings = $input.all();\nconst now = new Date();\nconst oneHourFromNow = new Date(now.getTime() + (60 * 60 * 1000));\nconst fiftyMinutesFromNow = new Date(now.getTime() + (50 * 60 * 1000));\n\nconst upcomingMeetings = allMeetings.filter(meeting => {\n  const meetingData = meeting.json;\n  \n  // Only process approved meetings\n  if (meetingData.status !== 'approved') {\n    return false;\n  }\n  \n  // Check if meeting is in the 1-hour reminder window\n  const meetingStart = new Date(meetingData.proposedStartTime);\n  \n  return meetingStart >= fiftyMinutesFromNow && meetingStart <= oneHourFromNow;\n});\n\nconsole.log(`Found ${upcomingMeetings.length} meetings needing 1-hour reminders`);\n\nreturn upcomingMeetings;"
+      },
+      "id": "63841e48-7021-44ea-8b13-84391b6580c0",
+      "name": "Filter 1h Reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1168,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare 1-hour reminder email\nconst meetingData = $input.first().json;\n\nconst emailSubject = `🚨 Meeting Starting Soon - In 1 Hour`;\n\nconst emailContent = `\nDear ${meetingData.userName},\n\nYour meeting is starting in approximately 1 hour!\n\n📅 **Meeting Details:**\n• Purpose: ${meetingData.meetingPurpose}\n• Time: ${new Date(meetingData.proposedStartTime).toLocaleTimeString()}\n• Duration: ${meetingData.estimatedDuration} minutes\n• Type: ${meetingData.meetingType}\n• Location: ${meetingData.location}\n\n🎯 **Final Preparations:**\n• Gather any materials or documents you need\n• Set up your workspace if it's an online meeting\n• Test your camera and microphone\n• Prepare your questions or discussion points\n• Plan to join 5 minutes early\n\n${meetingData.meetingType === 'online' ? \n  '💻 **Online Meeting Tips:**\\n• Check your internet connection\\n• Close unnecessary applications\\n• Find a quiet, well-lit location\\n• Have a backup plan (phone) ready\\n' : \n  '🏢 **In-Person Meeting Tips:**\\n• Allow extra time for travel and parking\\n• Bring business cards if appropriate\\n• Arrive 5-10 minutes early\\n'}\n\n📞 **Last-Minute Issues?**\nIf you have any urgent issues, please contact us immediately at admin@company.com\n\n**Reference Number:** ${meetingData.requestId.substring(4, 10).toUpperCase()}\n\nSee you soon!\n\nBest regards,\nMeeting Coordination Team\n\n---\nThis is an automated reminder email.\nPowered by n8n & Google Workspace\n`;\n\nreturn {\n  json: {\n    to: meetingData.userEmail,\n    subject: emailSubject,\n    content: emailContent,\n    meetingData: meetingData\n  }\n};"
+      },
+      "id": "86ea46ed-7162-47ce-8619-a3c6ec019b6c",
+      "name": "Prepare 1h Reminder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -976,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "ee09e7d7-ad15-4754-bf82-5fdb8444cec3",
+      "name": "Send 1h Reminder",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -768,
+        240
+      ],
+      "webhookId": "93d33e24-90bb-44a0-b19f-6ea087eb6611",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TDdK0ZuO7UdXtxRt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Meeting request received successfully. You will receive a confirmation email shortly.",
+        "options": {}
+      },
+      "id": "417d9438-6fd9-4c2b-8166-482bdded42d7",
+      "name": "Meeting Request Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Admin action processed successfully.",
+        "options": {}
+      },
+      "id": "a5484ba5-96a7-4a11-b015-b68a5cc50a9c",
+      "name": "Admin Action Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -576
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1TP79wo4JbnU9Dj7NOVA_VpTiU5UEAyvHcvRMGBeM7T8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Meeting_Requests",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Request_ID",
+              "displayName": "Request_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User_Name",
+              "displayName": "User_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User_Email",
+              "displayName": "User_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User_Phone",
+              "displayName": "User_Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User_Company",
+              "displayName": "User_Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meeting_Type",
+              "displayName": "Meeting_Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meeting_Purpose",
+              "displayName": "Meeting_Purpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Preferred_Date",
+              "displayName": "Preferred_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Preferred_Time",
+              "displayName": "Preferred_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Duration_Minutes",
+              "displayName": "Duration_Minutes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meeting_Details",
+              "displayName": "Meeting_Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin_Response",
+              "displayName": "Admin_Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confirmed_Date",
+              "displayName": "Confirmed_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confirmed_Time",
+              "displayName": "Confirmed_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Calendar_Event_ID",
+              "displayName": "Calendar_Event_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created_Date",
+              "displayName": "Created_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last_Updated",
+              "displayName": "Last_Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meeting_Link",
+              "displayName": "Meeting_Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder_Sent",
+              "displayName": "Reminder_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow_Up_Required",
+              "displayName": "Follow_Up_Required",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "183c7be7-7a02-41a5-8211-9bfdc0be3163",
+      "name": "Update Status to Approved",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -240,
+        -864
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4todXaxVSYlQaoKz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "admin/meetings",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "2bf42d8e-3d0b-4e67-8c33-f79c5cb56fd8",
+      "name": "Admin Get Meetings Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        -80
+      ],
+      "webhookId": "admin-meetings"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1TP79wo4JbnU9Dj7NOVA_VpTiU5UEAyvHcvRMGBeM7T8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Meeting_Requests",
+          "mode": "name"
+        },
+        "options": {
+          "range": "",
+          "valueInputMode": "USER_ENTERED"
+        }
+      },
+      "id": "3a20c251-8568-4071-be30-639f4c7f473d",
+      "name": "Get All Meetings from Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -1248,
+        -80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4todXaxVSYlQaoKz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Admin Meeting Data - Robust Implementation\n// This node transforms Google Sheets data into structured meeting data for the admin panel\n\ntry {\n  // Get input data from Google Sheets\n  const inputData = $input.all();\n  console.log('Raw input data received:', inputData.length, 'items');\n  \n  // Handle empty input\n  if (!inputData || inputData.length === 0) {\n    console.log('No data received from Google Sheets');\n    return {\n      json: {\n        success: true,\n        meetings: [],\n        statistics: {\n          totalCount: 0,\n          pendingCount: 0,\n          approvedCount: 0,\n          rejectedCount: 0,\n          rescheduledCount: 0,\n          cancelledCount: 0\n        },\n        lastUpdated: new Date().toISOString(),\n        message: 'No meetings found in the system'\n      }\n    };\n  }\n\n  // Log first item structure for debugging\n  const firstItem = inputData[0];\n  const sampleData = firstItem.json || firstItem;\n  console.log('Sample data structure:', Object.keys(sampleData));\n  console.log('First item:', JSON.stringify(sampleData, null, 2));\n\n  // Helper function to safely get values from different possible column names\n  function safeGetValue(rowData, ...possibleKeys) {\n    for (const key of possibleKeys) {\n      if (rowData[key] !== undefined && rowData[key] !== null && rowData[key] !== '') {\n        return String(rowData[key]).trim();\n      }\n    }\n    return '';\n  }\n\n  // Helper function to safely convert to lowercase\n  function safeLowerCase(value, defaultValue = '') {\n    if (!value) return defaultValue;\n    return String(value).toLowerCase().trim();\n  }\n\n  // Process each row of data\n  const processedMeetings = [];\n  \n  for (let i = 0; i < inputData.length; i++) {\n    const item = inputData[i];\n    const rowData = item.json || item;\n    \n    // Skip header rows or empty rows\n    const requestId = safeGetValue(rowData, 'Request_ID', 'requestId', 'Request ID', 'ID');\n    if (!requestId || requestId === 'Request_ID' || requestId === 'requestId') {\n      console.log(`Skipping row ${i + 1}: header or empty row`);\n      continue;\n    }\n\n    // Extract and clean data\n    const meeting = {\n      // Core identification\n      requestId: requestId,\n      timestamp: safeGetValue(rowData, 'Timestamp', 'timestamp', 'Created_Date', 'createdDate') || new Date().toISOString(),\n      \n      // User information\n      userName: safeGetValue(rowData, 'User_Name', 'userName', 'User Name', 'Name') || 'Unknown User',\n      userEmail: safeGetValue(rowData, 'User_Email', 'userEmail', 'User Email', 'Email'),\n      userPhone: safeGetValue(rowData, 'User_Phone', 'userPhone', 'User Phone', 'Phone'),\n      userCompany: safeGetValue(rowData, 'User_Company', 'userCompany', 'User Company', 'Company'),\n      userPosition: safeGetValue(rowData, 'User_Position', 'userPosition', 'User Position', 'Position'),\n      \n      // Meeting details\n      meetingPurpose: safeGetValue(rowData, 'Meeting_Purpose', 'meetingPurpose', 'Meeting Purpose', 'Purpose') || 'Meeting Request',\n      meetingDescription: safeGetValue(rowData, 'Meeting_Description', 'meetingDescription', 'Meeting Description', 'Description'),\n      preferredDate: safeGetValue(rowData, 'Preferred_Date', 'preferredDate', 'Preferred Date', 'Date'),\n      preferredTime: safeGetValue(rowData, 'Preferred_Time', 'preferredTime', 'Preferred Time', 'Time'),\n      duration: safeGetValue(rowData, 'Duration_Minutes', 'duration', 'Duration', 'estimatedDuration') || '60',\n      meetingType: safeLowerCase(safeGetValue(rowData, 'Meeting_Type', 'meetingType', 'Meeting Type', 'Type'), 'online'),\n      location: safeGetValue(rowData, 'Location', 'location'),\n      \n      // Status and priority\n      status: safeLowerCase(safeGetValue(rowData, 'Status', 'status'), 'pending'),\n      priority: safeLowerCase(safeGetValue(rowData, 'Priority', 'priority', 'urgency'), 'normal'),\n      \n      // Additional fields\n      additionalNotes: safeGetValue(rowData, 'Additional_Notes', 'additionalNotes', 'Additional Notes', 'Notes'),\n      adminResponse: safeGetValue(rowData, 'Admin_Response', 'adminResponse', 'Admin Response'),\n      confirmedDate: safeGetValue(rowData, 'Confirmed_Date', 'confirmedDate', 'Confirmed Date'),\n      confirmedTime: safeGetValue(rowData, 'Confirmed_Time', 'confirmedTime', 'Confirmed Time'),\n      calendarEventId: safeGetValue(rowData, 'Calendar_Event_ID', 'calendarEventId', 'Calendar Event ID'),\n      meetingLink: safeGetValue(rowData, 'Meeting_Link', 'meetingLink', 'Meeting Link'),\n      lastUpdated: safeGetValue(rowData, 'Last_Updated', 'lastUpdated', 'Last Updated') || new Date().toISOString(),\n      createdDate: safeGetValue(rowData, 'Created_Date', 'createdDate', 'Created Date') || new Date().toISOString()\n    };\n\n    // Add formatted display fields\n    meeting.displayDate = meeting.preferredDate ? \n      formatDate(meeting.preferredDate) : 'Not specified';\n    meeting.displayTime = meeting.preferredTime || 'Not specified';\n    meeting.urgencyDisplay = getUrgencyDisplay(meeting.priority);\n    meeting.statusDisplay = getStatusDisplay(meeting.status);\n    meeting.meetingTypeDisplay = getMeetingTypeDisplay(meeting.meetingType);\n    \n    // Add to processed meetings\n    processedMeetings.push(meeting);\n    console.log(`Processed meeting ${i + 1}: ${meeting.userName} - ${meeting.meetingPurpose}`);\n  }\n\n  // Helper functions for display formatting\n  function formatDate(dateString) {\n    try {\n      const date = new Date(dateString);\n      if (isNaN(date.getTime())) {\n        return dateString; // Return original if not a valid date\n      }\n      return date.toLocaleDateString('en-US', {\n        year: 'numeric',\n        month: 'short',\n        day: 'numeric'\n      });\n    } catch (error) {\n      return dateString;\n    }\n  }\n\n  function getUrgencyDisplay(priority) {\n    const urgencyMap = {\n      'low': '🟢 Low',\n      'normal': '🟡 Normal',\n      'high': '🟠 High',\n      'urgent': '🔴 Urgent'\n    };\n    return urgencyMap[priority] || '🟡 Normal';\n  }\n\n  function getStatusDisplay(status) {\n    const statusMap = {\n      'pending': '⏳ Pending',\n      'approved': '✅ Approved',\n      'rejected': '❌ Rejected',\n      'rescheduled': '📅 Rescheduled',\n      'cancelled': '🚫 Cancelled'\n    };\n    return statusMap[status] || '⏳ Pending';\n  }\n\n  function getMeetingTypeDisplay(meetingType) {\n    const typeMap = {\n      'online': '💻 Online',\n      'offline': '🏢 In-Person',\n      'hybrid': '🔄 Hybrid',\n      'phone': '📞 Phone'\n    };\n    return typeMap[meetingType] || '💻 Online';\n  }\n\n  // Calculate statistics\n  const totalCount = processedMeetings.length;\n  const pendingCount = processedMeetings.filter(m => m.status === 'pending').length;\n  const approvedCount = processedMeetings.filter(m => m.status === 'approved').length;\n  const rejectedCount = processedMeetings.filter(m => m.status === 'rejected').length;\n  const rescheduledCount = processedMeetings.filter(m => m.status === 'rescheduled').length;\n  const cancelledCount = processedMeetings.filter(m => m.status === 'cancelled').length;\n\n  // Sort meetings by timestamp (newest first)\n  try {\n    processedMeetings.sort((a, b) => {\n      const dateA = new Date(a.timestamp);\n      const dateB = new Date(b.timestamp);\n      return dateB.getTime() - dateA.getTime();\n    });\n  } catch (sortError) {\n    console.log('Sorting error (using original order):', sortError.message);\n  }\n\n  // Prepare final result\n  const result = {\n    json: {\n      success: true,\n      meetings: processedMeetings,\n      statistics: {\n        totalCount,\n        pendingCount,\n        approvedCount,\n        rejectedCount,\n        rescheduledCount,\n        cancelledCount\n      },\n      lastUpdated: new Date().toISOString(),\n      message: `Successfully processed ${totalCount} meetings`,\n      metadata: {\n        processedAt: new Date().toISOString(),\n        sourceRows: inputData.length,\n        validMeetings: totalCount,\n        skippedRows: inputData.length - totalCount\n      }\n    }\n  };\n\n  console.log('Processing complete:');\n  console.log('- Total rows received:', inputData.length);\n  console.log('- Valid meetings processed:', totalCount);\n  console.log('- Pending:', pendingCount, 'Approved:', approvedCount, 'Rejected:', rejectedCount);\n  \n  return result;\n\n} catch (error) {\n  console.error('Error in Format Admin Meeting Data:', error);\n  \n  // Return error response\n  return {\n    json: {\n      success: false,\n      error: error.message,\n      meetings: [],\n      statistics: {\n        totalCount: 0,\n        pendingCount: 0,\n        approvedCount: 0,\n        rejectedCount: 0,\n        rescheduledCount: 0,\n        cancelledCount: 0\n      },\n      lastUpdated: new Date().toISOString(),\n      message: 'Error processing meeting data: ' + error.message\n    }\n  };\n}"
+      },
+      "id": "483771bb-05d0-4e47-a721-f5723d57f633",
+      "name": "Format Admin Meeting Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1056,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, POST, PUT, DELETE, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "4b408bbb-28eb-402a-ba1c-008742fe0385",
+      "name": "Admin Meetings Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "3ef49d693810ddce92b26bf3e268d3df6f18cfa0395fbc4663748c2b9e598a18@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "n8n testing"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -624,
+        -672
+      ],
+      "id": "38d1870f-1ac9-473b-b5e1-7de890e227c9",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "8o4WwXpvw4fnNv0M",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "QR Code Scan Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "localhost:5678",
+            "connection": "keep-alive",
+            "content-length": "615",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-ch-ua": "\"Not;A=Brand\";v=\"99\", \"Microsoft Edge\";v=\"139\", \"Chromium\";v=\"139\"",
+            "sec-ch-ua-mobile": "?0",
+            "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "access-control-allow-origin": "*",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0",
+            "content-type": "application/json",
+            "access-control-allow-headers": "Content-Type, Authorization",
+            "accept": "*/*",
+            "origin": "http://localhost:5500",
+            "sec-fetch-site": "same-site",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty",
+            "referer": "http://localhost:5500/",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9,en-IN;q=0.8"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "requestId": "req_1756244902938_8c2lc",
+            "timestamp": "2025-08-26T21:48:22.938Z",
+            "status": "pending",
+            "adminEmail": "admin@company.com",
+            "userName": "sayan",
+            "userEmail": "sayankarmakar0908@gmail.com",
+            "userPhone": "7848948443",
+            "userCompany": "Frostbite",
+            "userPosition": "student",
+            "meetingPurpose": "nlnjnjjjknk",
+            "meetingDescription": "dzf",
+            "preferredDate": "2025-08-29",
+            "preferredTime": "03:22",
+            "estimatedDuration": "60",
+            "meetingType": "hybrid",
+            "location": "",
+            "urgency": "normal",
+            "additionalNotes": "Cdgbeg",
+            "proposedStartTime": "2025-08-28T21:52:00.000Z",
+            "proposedEndTime": "2025-08-28T22:52:00.000Z",
+            "attachments": [],
+            "source": "web_form"
+          },
+          "webhookUrl": "http://localhost:5678/webhook/meeting-request",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "QR Code Scan Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Meeting Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Meeting Request": {
+      "main": [
+        [
+          {
+            "node": "Log Meeting Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Meeting Request": {
+      "main": [
+        [
+          {
+            "node": "Prepare Admin Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare User Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Admin Notification": {
+      "main": [
+        [
+          {
+            "node": "Send Admin Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Admin Notification": {
+      "main": [
+        [
+          {
+            "node": "Meeting Request Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare User Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Send User Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send User Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Meeting Request Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin Action Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Admin Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Admin Action": {
+      "main": [
+        [
+          {
+            "node": "Lookup Meeting Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Meeting Request": {
+      "main": [
+        [
+          {
+            "node": "Check Action Type",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check if Reschedule",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Action Type": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Rejection Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Approval Email": {
+      "main": [
+        [
+          {
+            "node": "Send Approval Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Approval Email": {
+      "main": [
+        [
+          {
+            "node": "Admin Action Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Rejection Email": {
+      "main": [
+        [
+          {
+            "node": "Send Rejection Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Rejection Email": {
+      "main": [
+        [
+          {
+            "node": "Admin Action Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Reschedule": {
+      "main": [
+        [
+          {
+            "node": "Prepare Reschedule Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Reschedule Email": {
+      "main": [
+        [
+          {
+            "node": "Send Reschedule Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reschedule Email": {
+      "main": [
+        [
+          {
+            "node": "Admin Action Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "24 Hour Reminder Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Upcoming Meetings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Upcoming Meetings": {
+      "main": [
+        [
+          {
+            "node": "Filter 24h Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter 24h Reminders": {
+      "main": [
+        [
+          {
+            "node": "Prepare 24h Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare 24h Reminder": {
+      "main": [
+        [
+          {
+            "node": "Send 24h Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1 Hour Reminder Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Meetings for 1h Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Meetings for 1h Reminder": {
+      "main": [
+        [
+          {
+            "node": "Filter 1h Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter 1h Reminders": {
+      "main": [
+        [
+          {
+            "node": "Prepare 1h Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare 1h Reminder": {
+      "main": [
+        [
+          {
+            "node": "Send 1h Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status to Approved": {
+      "main": [
+        [
+          {
+            "node": "Admin Action Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin Get Meetings Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get All Meetings from Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Meetings from Sheets": {
+      "main": [
+        [
+          {
+            "node": "Format Admin Meeting Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Admin Meeting Data": {
+      "main": [
+        [
+          {
+            "node": "Admin Meetings Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Prepare Approval Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "b3xRKOMeI1rCtxi0"
+  },
+  "versionId": "c49a081c-db36-4afd-bc42-35d8081b91f0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30d58de7210863fbf545b72f959331d6a578bc497b039d57c639477b8a99ee26"
+  },
+  "id": "b3xRKOMeI1rCtxi0",
+  "tags": [
+    {
+      "createdAt": "2025-08-20T20:10:18.425Z",
+      "updatedAt": "2025-08-20T20:10:18.425Z",
+      "id": "GPkUGsxvBRatd0pq",
+      "name": "ai-data-extraction"
+    },
+    {
+      "createdAt": "2025-08-26T13:44:31.150Z",
+      "updatedAt": "2025-08-26T13:44:31.150Z",
+      "id": "QGXHhjMfITA7ka6G",
+      "name": "meeting-automation"
+    },
+    {
+      "createdAt": "2025-08-26T13:44:31.086Z",
+      "updatedAt": "2025-08-26T13:44:31.086Z",
+      "id": "QVJQZPBXLPGmy81z",
+      "name": "qr-code-system"
+    },
+    {
+      "createdAt": "2025-08-26T13:44:31.131Z",
+      "updatedAt": "2025-08-26T13:44:31.131Z",
+      "id": "cdsXgKl4Y8GJiPxy",
+      "name": "google-calendar"
+    },
+    {
+      "createdAt": "2025-08-20T20:10:18.453Z",
+      "updatedAt": "2025-08-20T20:10:18.453Z",
+      "id": "eaZgeMCP5Pc6PGTR",
+      "name": "hackathon-automation"
+    }
+  ]
+}
